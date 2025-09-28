@@ -10,8 +10,7 @@ Route::get('/', function () {
 use App\Http\Controllers\PipedriveController;
 
 Route::get('/oauth/callback', [PipedriveController::class, 'oauthCallback'])->name('oauth.callback');
-// Route::get('/panel', [PipedriveController::class, 'panel'])->name('panel');
-Route::match(['get', 'post'], '/panel', [PipedriveController::class, 'show'])->name('show');
+Route::get('/panel', [PipedriveController::class, 'panel'])->name('panel');
 
 Route::get('/api/transactions', [PipedriveController::class, 'transactions'])->name('transactions');
 

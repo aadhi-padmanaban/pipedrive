@@ -11,39 +11,41 @@ class PipedriveController extends Controller
 {
     public function oauthCallback(Request $request)
     {
-        $code = $request->query('code');
+        try {
+            $code = $request->query('code');
 
-        $response = Http::asForm()->post('https://oauth.pipedrive.com/oauth/token', [
-        'grant_type' => 'authorization_code',
-        'code' => $code,
-        'client_id' => env('PD_CLIENT_ID'),
-        'client_secret' => env('PD_CLIENT_SECRET'),
-        'redirect_uri' => env('PD_REDIRECT_URI'),
-    ]);
+            $response = Http::asForm()->post('https://oauth.pipedrive.com/oauth/token', [
+                'grant_type' => 'authorization_code',
+                'code' => $code,
+                'client_id' => env('PD_CLIENT_ID'),
+                'client_secret' => env('PD_CLIENT_SECRET'),
+                'redirect_uri' => env('PD_REDIRECT_URI'),
+            ]);
 
-        $tokens = $response->json();
-        \Log::info('OAuth token response:', $tokens);
-
+            $tokens = $response->json();
 
 
-        $response = Http::withToken($tokens['access_token'])
-               ->get($tokens['api_domain'].'/v1/users/me');
 
-        $userInfo = $response->json();
-        $companyId = $userInfo['data']['company_id'] ?? null; // Adjust based on actual field returned
+            $response = Http::withToken($tokens['access_token'])
+                ->get($tokens['api_domain'].'/v1/users/me');
 
-        PipedriveToken::updateOrCreate(
-            ['company_id' => $companyId],
-            [
-                'access_token' => $tokens['access_token'],
-                'refresh_token' => $tokens['refresh_token'],
-                'expires_at'   => Carbon::now()->addSeconds($tokens['expires_in']),
-            ]
-        );
+            $userInfo = $response->json();
+            $companyId = $userInfo['data']['company_id'] ?? null; // Adjust based on actual field returned
 
-        // Save $tokens['access_token'] in DB for production
-        // return response()->json($tokens);
-        return redirect($tokens['api_domain']);
+            PipedriveToken::updateOrCreate(
+                ['company_id' => $companyId],
+                [
+                    'access_token' => $tokens['access_token'],
+                    'refresh_token' => $tokens['refresh_token'],
+                    'expires_at'   => Carbon::now()->addSeconds($tokens['expires_in']),
+                ]
+            );
+
+            return redirect($tokens['api_domain']);
+        } catch (\Exception $e) {
+            \Log::error('OAuth callback error: ' . $e->getMessage());
+            return response()->json(['error' => 'OAuth callback failed, please try again.'], 500);
+        }
         
     }
 
@@ -53,27 +55,16 @@ class PipedriveController extends Controller
         // Loads iframe panel UI
         return view('panel');
     }
-    public function show(Request $request)
-    {
-        // Handle both GET (testing) and POST (Pipedrive)
-        $context = $request->all();
-        if ($request->isMethod('get')) {
-            $context = $request->query();
-        }
-
-        // Always return an HTML view, never raw JSON
-        return view('panel', compact('context'));
-    }
+    
 
 
     public function transactions(Request $request)
     {
-        // $email = $request->query('email');
-        \Log::info('transactions input:', $request->all());
+        
         $companyId = $request->query('companyId');
         $personId = $request->query('personId');
         $email = $this->getContactEmail($companyId, $personId);
-        \Log::info('email:', ['email' => $email]);
+        
 
         if (!$email) {
             return response()->json(['error' => 'Email required'], 400);
@@ -82,7 +73,7 @@ class PipedriveController extends Controller
         $response = Http::get("https://octopus-app-3hac5.ondigitalocean.app/api/stripe_data", [
             'email' => $email
         ]);
-        // \Log::info('response:', ['response' => $response]);
+        
         if ($response->failed()) {
             return response()->json($response->json(),$response->status());
         }
@@ -123,7 +114,7 @@ class PipedriveController extends Controller
             ]
         ];
 
-        return response()->json($resp)//;
+        return response()->json($resp)
          ->header('X-Frame-Options', 'ALLOW-FROM https://*.pipedrive.com')
                  ->header('Content-Security-Policy', "frame-ancestors https://*.pipedrive.com");
     }
@@ -131,12 +122,12 @@ class PipedriveController extends Controller
     public function getContactEmail($companyId, $personId)
     {
         $token = PipedriveToken::where('company_id', $companyId)->first();
-        \Log::info('getContactEmail token:', ['token' => $token]);
+        
         if (!$token) return null;
 
         $response = Http::withToken($token->access_token)
             ->get("https://api.pipedrive.com/v1/persons/{$personId}");
-        \Log::info('getContactEmail contact:', ['contact' => $response]);
+        
         if ($response->failed()) {
             return null;
         }

@@ -15,22 +15,18 @@
 
     <script>
         async function fetchTransactions() {
-            // const urlParams = new URLSearchParams(window.location.search);
+            const urlParams = new URLSearchParams(window.location.search);
             
-            // const personId = urlParams.get("selectedIds");
-            // const companyId = urlParams.get("companyId");
+            const personId = urlParams.get("selectedIds");
+            const companyId = urlParams.get("companyId");
 
-            const context = @json($context);
-
-            // Pipedrive iframe sends context as POST JSON
-            let personId = context.selectedIds || null;
-            let companyId = context.companyId || null;
+            
 
             const container = document.getElementById("transactions");
             container.innerHTML = `<div class="alert alert-info">Fetching data...</div>`;
 
             try {
-                // const resp = await fetch("/api/transactions?email=" + encodeURIComponent(email));
+                
                 const resp = await fetch("/api/transactions?personId=" + encodeURIComponent(personId)+"&companyId="+encodeURIComponent(companyId));
                 if (!resp.ok) {
                     const errorText = await resp.json(); // get error details
@@ -81,10 +77,6 @@
             }
         }
         fetchTransactions();
-        // document.getElementById("emailForm").addEventListener("submit", function (e) {
-        //     e.preventDefault();
-        //     const email = document.getElementById("emailInput").value.trim();
-        //     if (email) fetchTransactions(email);
-        // });
+        
     </script>
 @endsection
