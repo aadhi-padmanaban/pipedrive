@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\PipedriveToken;
 use Illuminate\Support\Facades\Http;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Log;
 
 class PipedriveService
 {
@@ -13,9 +14,9 @@ class PipedriveService
         $response = Http::asForm()->post('https://oauth.pipedrive.com/oauth/token', [
             'grant_type' => 'authorization_code',
             'code' => $code,
-            'client_id' => env('PD_CLIENT_ID'),
-            'client_secret' => env('PD_CLIENT_SECRET'),
-            'redirect_uri' => env('PD_REDIRECT_URI'),
+            'client_id' => env('0fc46d8353d41dd9'),
+            'client_secret' => env('871fb36b04ab88d8fef1b9295a9f0a6672d423df'),
+            'redirect_uri' => env('https://pipedrive-3jeqg.sevalla.app/oauth/callback'),
         ]);
 
         $tokens = $response->json();
@@ -43,7 +44,7 @@ class PipedriveService
     public function getContactEmail(int $companyId, int $personId): ?string
     {
         $token = PipedriveToken::where('company_id', $companyId)->first();
-        if (!$token) {
+        if (!$token) {Log::info('nottoken:', [$token]);
             return null;
         }
 
@@ -51,6 +52,7 @@ class PipedriveService
             ->get("https://api.pipedrive.com/v1/persons/{$personId}");
 
         if ($response->failed()) {
+        Log::info('failed:', [$token->access_token]);
             return null;
         }
 
