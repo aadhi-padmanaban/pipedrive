@@ -1,0 +1,34 @@
+# Use official PHP image with Composer preinstalled
+FROM composer:2.7 AS build
+
+WORKDIR /app
+
+# Copy everything
+COPY . .
+
+# Install dependencies
+RUN composer install --no-dev --optimize-autoloader --no-interaction
+
+# -----------------------------------------
+# Runtime stage
+# -----------------------------------------
+FROM php:8.2-cli
+
+# Install needed PHP extensions
+RUN apt-get update && apt-get install -y \
+    libpng-dev libjpeg-dev libfreetype6-dev zip git unzip libonig-dev libxml2-dev curl \
+    && docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Copy from build stage
+WORKDIR /var/www/html
+COPY --from=build /app .
+
+# Generate optimized config
+RUN php artisan config:clear && php artisan cache:clear
+
+# Expose port 10000 for Render
+EXPOSE 10000
+
+# Start the Laravel development server
+CMD php artisan serve --host=0.0.0.0 --port=10000
