@@ -26,7 +26,7 @@ class PipedriveController extends Controller
     public function oauthCallback(Request $request)
     {
         try {
-            $code = $request->query('code');Log::info('code:', $code);
+            $code = $request->query('code');Log::info('code:', [$code]);
             $tokens = $this->pipedriveService->exchangeCodeForTokens($code);
 
             Log::info('OAuth token response:', $tokens);
@@ -39,7 +39,7 @@ class PipedriveController extends Controller
             return redirect($tokens['api_domain']);
         } catch (\Exception $e) {
             Log::error('OAuth callback error: ' . $e->getMessage());
-            return response()->json(['error' => 'OAuth callback failed, please try again.'], 500);
+            return response()->json(['error' => 'OAuth callback failed, please try again.'.$e->getMessage()], 500);
         }
     }
     public function panel(Request $request)
