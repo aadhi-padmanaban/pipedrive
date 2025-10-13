@@ -39,7 +39,7 @@ class PipedriveController extends Controller
             return redirect($tokens['api_domain']);
         } catch (\Exception $e) {
             Log::error('OAuth callback error: ' . $e->getMessage());
-            return response()->json(['error' => 'OAuth callback failed, please try again.'.$e->getMessage()], 500);
+            return response()->json(['error' => 'OAuth callback failed, please try again.'], 500);
         }
     }
     public function panel(Request $request)
