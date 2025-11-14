@@ -14,8 +14,8 @@ class PipedriveService
         $response = Http::asForm()->post('https://oauth.pipedrive.com/oauth/token', [
             'grant_type' => 'authorization_code',
             'code' => $code,
-            'client_id' => '0fc46d8353d41dd9',
-            'client_secret' => '871fb36b04ab88d8fef1b9295a9f0a6672d423df',
+            'client_id' => env('CLIENT_ID'),
+            'client_secret' => env('CLIENT_SECRET'),
             'redirect_uri' => 'https://pipedrive-3jeqg.sevalla.app/oauth/callback',
         ]);
 
